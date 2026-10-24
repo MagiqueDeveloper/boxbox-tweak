@@ -1,0 +1,31 @@
+name: Create Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-release:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install dependencies
+      run: |
+        brew install xcodegen insert-dylib ldid
+
+    - name: Build BoxBox.dylib
+      run: make build
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/BoxBox.dylib
+        body_path: release-notes.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
