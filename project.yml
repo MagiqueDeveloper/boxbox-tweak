@@ -1,0 +1,39 @@
+name: BoxBox
+options:
+  bundleIdPrefix: com.boxbox
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+settings:
+  base:
+    ARCHS: arm64
+    ONLY_ACTIVE_ARCH: NO
+    IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+    CODE_SIGNING_ALLOWED: NO
+    CLANG_ENABLE_OBJC_ARC: YES
+    CLANG_ENABLE_MODULES: YES
+    MACH_O_TYPE: mh_dylib
+    GENERATE_INFOPLIST_FILE: YES
+    # This is the load path the injected LC_LOAD_DYLIB will point at.
+    LD_DYLIB_INSTALL_NAME: "@executable_path/Frameworks/BoxBox.dylib"
+    DYLIB_INSTALL_NAME_BASE: "@executable_path/Frameworks"
+
+targets:
+  BoxBox:
+    type: library.dynamic
+    platform: iOS
+    sources:
+      - path: src
+      - path: include
+        buildPhase: none
+    settings:
+      base:
+        PRODUCT_NAME: BoxBox
+        PRODUCT_BUNDLE_IDENTIFIER: com.boxbox.dylib
+        HEADER_SEARCH_PATHS:
+          - "$(SRCROOT)/include"
+          - "$(SRCROOT)/src"
+        SKIP_INSTALL: YES
+        DEFINES_MODULE: NO
