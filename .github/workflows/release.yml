@@ -15,7 +15,10 @@ jobs:
 
     - name: Install dependencies
       run: |
-        brew install xcodegen insert-dylib ldid
+        brew install xcodegen ldid
+        # Install insert_dylib from source
+        curl -L https://github.com/Tyilo/insert_dylib/releases/download/0.4.0/insert_dylib -o /usr/local/bin/insert_dylib
+        chmod +x /usr/local/bin/insert_dylib
 
     - name: Build BoxBox.dylib
       run: make build
