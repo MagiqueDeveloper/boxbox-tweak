@@ -1,8 +1,6 @@
 # BoxBox
 
-Enhance your Box Box Club experience. A lightweight iOS dylib that provides additional features.
-
-Works with TrollStore and sideloaded iOS apps.
+Enhance your Box Box Club experience. A lightweight iOS dylib that provides additional features. Works with TrollStore and sideloading.
 
 ## Quick Start
 
@@ -23,18 +21,13 @@ Releases on GitHub provide pre-built binaries for all users.
 
 - Enhances Box Box Club app functionality
 - No jailbreak required
-- Works on iOS 15.0+ with TrollStore or Sideloading
-- Lightweight and fast
-- Preserves app data
+- Works on iOS 15.0+
 
 ## How it works
 
 1. **Build**: Compile the dylib for arm64 iOS devices
 2. **Inject**: Insert dylib into Box Box Club's binary
 3. **Load**: On app launch, BoxBox hooks into the app and activates enhancements
-4. **Sign**: Preserve app entitlents and re-sign
-
-After an iOS or app update, re-inject (app updates remove the injection).
 
 ## Disclaimer
 
