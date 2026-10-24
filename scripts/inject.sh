@@ -91,6 +91,34 @@ cp "$DYLIB" "$APP/Frameworks/$(basename "$DYLIB")"
 note "inserting LC_LOAD_DYLIB -> $INSTALL_NAME"
 insert_dylib --inplace --strip-codesig --all-yes "$INSTALL_NAME" "$BINARY" >/dev/null
 
+# Embedded extensions (.appex) run in their own process, so they need the load
+# command too — otherwise hooks only apply to the host app and anything that
+# gates on shared state (widgets, intents) stays locked.
+INSTALL_REL="${INSTALL_NAME#@executable_path/}"
+mkdir -p "$WORK/ents"
+for APPEX in "$APP"/PlugIns/*.appex "$APP"/Extensions/*.appex; do
+    [[ -d "$APPEX" ]] || continue
+    EXT_NAME="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APPEX/Info.plist" 2>/dev/null || true)"
+    [[ -n "$EXT_NAME" ]] || continue
+    EXT_BIN="$APPEX/$EXT_NAME"
+    [[ -f "$EXT_BIN" ]] || continue
+    EXT_REL="${APPEX#"$APP"/}"
+
+    # Walk back out of the .appex to the Frameworks/ dir we just populated.
+    UPDIRS=""
+    I=0
+    while [[ "$I" -lt "$(printf '%s' "$EXT_REL" | awk -F/ '{print NF}')" ]]; do
+        UPDIRS="../$UPDIRS"
+        I=$((I + 1))
+    done
+
+    # Read entitlements before --strip-codesig throws the signature away.
+    codesign -d --entitlements :- "$EXT_BIN" >"$WORK/ents/${EXT_REL//\//_}.plist" 2>/dev/null || true
+
+    note "  extension $(basename "$APPEX") -> @executable_path/$UPDIRS$INSTALL_REL"
+    insert_dylib --inplace --strip-codesig --all-yes "@executable_path/$UPDIRS$INSTALL_REL" "$EXT_BIN" >/dev/null
+done
+
 # When repacking an IPA the pristine input is already the backup, and an extra
 # .bak inside the bundle would just get sealed into its CodeResources.
 if [[ "$REPACK" == "1" ]]; then
@@ -98,12 +126,29 @@ if [[ "$REPACK" == "1" ]]; then
 fi
 
 note "re-signing (ad-hoc)"
+# Nested code first, bundle seal last: touching a nested binary after the parent
+# has been sealed invalidates its resource seal, and the extension then dies at
+# launch with OS_REASON_CODESIGNING.
 codesign --force --sign "$SIGN_ID" "$APP/Frameworks/$(basename "$DYLIB")"
-# --deep first so every nested binary gets a fresh signature...
 codesign --force --deep --sign "$SIGN_ID" "$APP"
-# ...then the main binary last, so its entitlements survive.
+
+# --deep throws nested entitlements away, so put the extensions' back...
+for APPEX in "$APP"/PlugIns/*.appex "$APP"/Extensions/*.appex; do
+    [[ -d "$APPEX" ]] || continue
+    EXT_ENT="$WORK/ents/${APPEX#"$APP"/}.plist"
+    EXT_ENT="${EXT_ENT//\//_}"
+    if [[ -s "$EXT_ENT" ]]; then
+        codesign --force --sign "$SIGN_ID" --entitlements "$EXT_ENT" "$APPEX"
+    else
+        codesign --force --sign "$SIGN_ID" "$APPEX"
+    fi
+done
+
+# ...then re-seal the bundle last; --entitlements here lands on the host binary.
 if [[ "$HAVE_ENT" == "1" ]]; then
-    codesign --force --sign "$SIGN_ID" --entitlements "$ENT" "$BINARY"
+    codesign --force --sign "$SIGN_ID" --entitlements "$ENT" "$APP"
+else
+    codesign --force --sign "$SIGN_ID" "$APP"
 fi
 
 note "verifying"
