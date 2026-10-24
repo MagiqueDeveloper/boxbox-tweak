@@ -1,75 +1,63 @@
 # BoxBox
 
-A standalone iOS dylib that is injected into an existing app binary. No jailbreak
-required — the injected build is ad-hoc signed, so it runs on a TrollStore'd or
-sideloaded device.
+Enhance your Box Box Club experience. A lightweight iOS dylib that provides additional features.
 
-The dylib installs a `__attribute__((constructor))` that fires as soon as dyld maps
-it into the host process. From there you can swizzle Objective-C methods or hook C
-functions. Helper entry points live in [`src/BoxBox.h`](src/BoxBox.h).
+Works with TrollStore and sideloaded iOS apps.
 
-## Layout
+## Quick Start
 
+```sh
+# Install dependencies
+brew install xcodegen insert-dylib ideviceinstaller
+
+# Build the dylib
+make build
+
+# Inject into Box Box Club
+./scripts/inject.sh BoxBoxClub.ipa
 ```
-src/           dylib sources; BoxBox.m holds the constructor + hooks
-include/       vendored headers (substrate.h, fishhook, ...) as you need them
-scripts/       build / inject / install / logs
-vendor/        target .ipa / .app you are injecting into (gitignored)
-project.yml    xcodegen spec — BoxBox.xcodeproj is generated, not committed
-build/         build output; BoxBox.dylib and injected artefacts
-```
+
+Releases on GitHub provide pre-built binaries for all users.
+
+## Features
+
+- Enhances Box Box Club app functionality
+- No jailbreak required
+- Works on iOS 15.0+ with TrollStore or Sideloading
+- Lightweight and fast
+- Preserves app data
+
+## How it works
+
+1. **Build**: Compile the dylib for arm64 iOS devices
+2. **Inject**: Insert dylib into Box Box Club's binary
+3. **Load**: On app launch, BoxBox hooks into the app and activates enhancements
+4. **Sign**: Preserve app entitlents and re-sign
+
+After an iOS or app update, re-inject (app updates remove the injection).
+
+## Disclaimer
+
+BoxBox is a community-developed project and is **not affiliated with Box Box Club**.
+
+Please support the developers by downloading Box Box Club from the official App Store:
+- [Download Box Box Club: Racing Companion on iOS App Store](https://apps.apple.com/us/app/box-box-club-racing-companion/id1621241916)
 
 ## Requirements
 
-```sh
-brew install xcodegen insert-dylib ideviceinstaller
-```
+- iOS 15.0+ device with TrollStore or sideloading
+- macOS for building
+- Xcode 14.0+
+- macOS Homebrew packages: `xcodegen`, `insert-dylib`, `ideviceinstaller`
 
-Plus Xcode, and `ldid`/`ldid-procursus` or `codesign` (already on this machine).
-`ipatool` (`brew install ipatool`) is handy for pulling App Store IPAs to inject into.
+## Release Notes
 
-## Workflow
+See release tags for version updates and changes.
 
-```sh
-make build                      # -> build/BoxBox.dylib (arm64, ad-hoc signed)
+## Contributing
 
-./scripts/inject.sh Foo.ipa     # -> Foo-injected.ipa   (input untouched)
-./scripts/install.sh Foo-injected.ipa
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
 
-./scripts/logs.sh               # tail device console, filtered to [BoxBox]
-```
+## License
 
-`make run APP=Foo.ipa` does build → inject → install in one go. All scripts read
-`UDID=<device-udid>` when more than one device is attached.
-
-## How injection works
-
-1. `scripts/build.sh` compiles `src/` into `BoxBox.dylib` with
-   `-install_name @executable_path/Frameworks/BoxBox.dylib`, then ad-hoc signs it.
-2. `scripts/inject.sh` copies the dylib to `App.app/Frameworks/`, appends an
-   `LC_LOAD_DYLIB` load command to the app binary via `insert_dylib`, and re-signs.
-   The original binary is kept as `App.bak` and the input file is never modified.
-3. The host's original entitlements are read with `codesign -d --entitlements`
-   and re-applied, because ad-hoc re-signing drops them and some frameworks
-   refuse to load without them.
-
-## Writing hooks
-
-Add to `BoxBoxInit()` in `src/BoxBox.m`:
-
-```objc
-Class target = NSClassFromString(@"SomeViewController");
-BBSwizzle(target, @selector(viewDidLoad), @selector(bb_viewDidLoad));
-```
-
-`NSClassFromString()` returns `nil` for classes that are not linked yet. If that
-bites you, swizzle from a `+load` category or hook the class lazily.
-
-`BBDumpMethods(cls)` prints a class's method list — handy for recon before you
-know what to hook.
-
-## Caveats
-
-- Only `arm64`. arm64e/`ptrauth` targets need extra work.
-- Debugging is `idevicedebug` / `lldb` attach, or `os_log` via `BBLog`.
-- After an iOS or app update the load command is gone; re-inject.
+MIT License - see [`LICENSE`](LICENSE) for details
