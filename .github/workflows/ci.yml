@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install shellcheck
         run: |
@@ -45,7 +45,7 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Install xcodegen
         run: brew install xcodegen
@@ -82,7 +82,7 @@ jobs:
           otool -L "$dylib" | tail -n +2
 
       - name: Upload the dylib
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: BoxBox.dylib
           path: build/BoxBox.dylib
