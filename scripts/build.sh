@@ -1,57 +1,78 @@
 #!/usr/bin/env bash
 #
-# Builds the BoxBox dylib for arm64 iOS, ad-hoc signs it and drops a copy at
-# build/BoxBox.dylib ready for scripts/inject.sh.
+# Builds BoxBox.dylib, sets its install name, and ad-hoc signs it.
 #
-#   ./scripts/build.sh                 # Release
-#   CONFIG=Debug ./scripts/build.sh    # Debug
+#   ./scripts/build.sh                        # device (iphoneos), Release
+#   SDK=iphonesimulator ./scripts/build.sh    # simulator, for ./scripts/sim.sh
+#   CONFIG=Debug ./scripts/build.sh           # Debug
+#
+# Output: build/BoxBox.dylib, or build/simulator/BoxBox.dylib for the simulator.
 #
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$ROOT"
+# shellcheck source=lib/common.sh
+source "$(dirname "${BASH_SOURCE[0]}")/lib/common.sh"
 
 CONFIG="${CONFIG:-Release}"
-OUT="$ROOT/build"
-INSTALL_NAME="@executable_path/Frameworks/BoxBox.dylib"
+SDK="${SDK:-iphoneos}"
 
-note() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
-die()  { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+case "$SDK" in
+    iphoneos) OUT="$BB_BUILD_DIR" ;;
+    iphonesimulator) OUT="$BB_BUILD_DIR/simulator" ;;
+    *) bb_die "unsupported SDK: $SDK (expected iphoneos or iphonesimulator)" ;;
+esac
 
-command -v xcodebuild >/dev/null || die "xcodebuild not found (install Xcode)"
-command -v codesign   >/dev/null || die "codesign not found"
+bb_require_xcode
+bb_require_cmd xcodegen "brew install xcodegen"
+bb_require_cmd install_name_tool "install Xcode"
 
-if [[ ! -d "$ROOT/BoxBox.xcodeproj" ]]; then
-    command -v xcodegen >/dev/null || die "xcodegen not found (brew install xcodegen)"
-    note "generating BoxBox.xcodeproj"
-    xcodegen generate --spec "$ROOT/project.yml" --project "$ROOT"
-fi
+# The .xcodeproj is generated, never committed, and its file list is only correct
+# for the sources that existed when it was written — so regenerate on every build
+# rather than only when the project happens to be missing.
+bb_note "generating BoxBox.xcodeproj"
+xcodegen generate --spec "$BB_ROOT/project.yml" --project "$BB_ROOT" >/dev/null
 
-note "building BoxBox ($CONFIG, iphoneos/arm64)"
+bb_note "building BoxBox $(bb_version) ($CONFIG, $SDK/arm64)"
 mkdir -p "$OUT"
-xcodebuild \
-    -project "$ROOT/BoxBox.xcodeproj" \
+LOG="$OUT/xcodebuild.log"
+
+if ! xcodebuild \
+    -project "$BB_ROOT/BoxBox.xcodeproj" \
     -target BoxBox \
     -configuration "$CONFIG" \
-    -sdk iphoneos \
+    -sdk "$SDK" \
+    SDKROOT="$SDK" \
     ARCHS=arm64 \
     ONLY_ACTIVE_ARCH=NO \
     CODE_SIGNING_ALLOWED=NO \
     SYMROOT="$OUT" \
-    build \
-    | sed -n '/error:/p; /warning:/p; /^\*\* /p'
+    build >"$LOG" 2>&1; then
+    grep -E 'error:|warning:' "$LOG" | head -40 || true
+    bb_die "build failed — full log: $LOG"
+fi
 
-BUILT="$OUT/$CONFIG-iphoneos/BoxBox.dylib"
-[[ -f "$BUILT" ]] || die "expected product not found: $BUILT"
+# Warnings are errors in project.yml, so this normally prints nothing.
+grep -E 'warning:' "$LOG" || true
 
-note "setting install_name -> $INSTALL_NAME"
-install_name_tool -id "$INSTALL_NAME" "$BUILT"
+BUILT="$OUT/$CONFIG-$SDK/BoxBox.dylib"
+if [[ ! -f "$BUILT" ]]; then
+    BUILT="$(find "$OUT" -name BoxBox.dylib -type f -print -quit)"
+fi
+[[ -f "$BUILT" ]] || bb_die "expected product not found under $OUT"
 
-note "ad-hoc signing"
+if [[ "$SDK" == "iphonesimulator" ]]; then
+    vtool -show-build "$BUILT" | grep -qi iossimulator \
+        || bb_die "$BUILT is not a simulator binary"
+fi
+
+bb_note "setting install name -> $BB_INSTALL_NAME"
+install_name_tool -id "$BB_INSTALL_NAME" "$BUILT"
+
+bb_note "ad-hoc signing"
 codesign --force --sign - "$BUILT"
 
 cp "$BUILT" "$OUT/BoxBox.dylib"
 
 printf '\n'
-note "done: $OUT/BoxBox.dylib"
+bb_note "done: $OUT/BoxBox.dylib"
 otool -D "$OUT/BoxBox.dylib" | tail -1

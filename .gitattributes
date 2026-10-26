@@ -1,0 +1,21 @@
+# Normalise line endings on checkout so shell scripts never arrive with CRLF.
+* text=auto eol=lf
+
+*.sh      text eol=lf
+*.m       text eol=lf
+*.h       text eol=lf
+*.yml     text eol=lf
+*.md      text eol=lf
+Makefile  text eol=lf
+
+# Binary assets — never diff or merge these.
+*.ipa     binary
+*.app     binary
+*.dylib   binary
+*.png     binary
+*.aiff    binary
+*.mp3     binary
+
+# Keep generated files out of the language stats on GitHub.
+build/**        linguist-generated=true
+BoxBox.xcodeproj/** linguist-generated=true

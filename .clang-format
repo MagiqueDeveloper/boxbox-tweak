@@ -1,0 +1,27 @@
+# Objective-C style for BoxBox. Enforced by `make lint`, applied by `make fmt`.
+# Based on the LLVM/Google ObjC conventions with a 100-column budget.
+# No `Language:` key on purpose: clang-format reads `.h` as C++ and `.m` as
+# Objective-C, and a language-scoped config would apply to only one of them.
+---
+BasedOnStyle: LLVM
+
+ColumnLimit: 100
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ObjCBlockIndentWidth: 4
+ObjCSpaceAfterProperty: true
+ObjCSpaceBeforeProtocolList: true
+BreakBeforeBraces: Attach
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortBlocksOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AlignAfterOpenBracket: Align
+BinPackArguments: true
+BinPackParameters: true
+PenaltyReturnTypeOnItsOwnLine: 200
+PointerAlignment: Right
+SpaceAfterCStyleCast: false
+SpacesInContainerLiterals: false
+SortIncludes: Never
