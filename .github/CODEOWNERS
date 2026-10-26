@@ -1,0 +1,11 @@
+# Default owner for everything in the repository.
+*                       @MagiqueDeveloper
+
+# Build, signing and injection plumbing — the paths where a mistake produces a
+# bundle that installs but is silently invalid.
+/scripts/               @MagiqueDeveloper
+/project.yml            @MagiqueDeveloper
+/.github/workflows/     @MagiqueDeveloper
+
+# The dylib itself.
+/src/                   @MagiqueDeveloper

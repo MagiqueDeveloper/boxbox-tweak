@@ -1,34 +1,54 @@
-name: Create Release
+name: Release
 
 on:
   push:
     tags:
       - 'v*.*.*'
 
+permissions:
+  contents: write
+
 jobs:
-  build-release:
-    runs-on: macos-latest
+  release:
+    name: Build and publish
+    runs-on: macos-14
+    timeout-minutes: 20
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install dependencies
-      run: |
-        brew install xcodegen ldid
-        # Install insert_dylib from source
-        curl -L https://github.com/Tyilo/insert_dylib/releases/download/0.4.0/insert_dylib -o /usr/local/bin/insert_dylib
-        chmod +x /usr/local/bin/insert_dylib
+      - name: Install xcodegen
+        run: brew install xcodegen
 
-    - name: Build BoxBox.dylib
-      run: make build
+      # lint.sh's version section refuses to pass when the tag and
+      # src/BBVersion.h disagree, so a mistyped tag cannot publish a mislabelled
+      # binary.
+      - name: Check the tag against src/BBVersion.h
+        run: TAG="${GITHUB_REF_NAME}" ./scripts/lint.sh
 
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      with:
-        files: build/BoxBox.dylib
-        body_path: release-notes.md
-        draft: false
-        prerelease: false
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build
+        run: make build
+
+      - name: Verify and checksum
+        run: |
+          set -euo pipefail
+          dylib=build/BoxBox.dylib
+          test -f "$dylib"
+
+          otool -D "$dylib" | tail -1 | grep -qx '@executable_path/Frameworks/BoxBox.dylib'
+          lipo -info "$dylib" | grep -q arm64
+          codesign --verify --verbose=1 "$dylib"
+
+          shasum -a 256 "$dylib" > "$dylib.sha256"
+          cat "$dylib.sha256"
+
+      - name: Publish
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            build/BoxBox.dylib
+            build/BoxBox.dylib.sha256
+          generate_release_notes: true
+          draft: false
+          # A tag like v1.1.0-rc1 publishes as a pre-release.
+          prerelease: ${{ contains(github.ref_name, '-') }}

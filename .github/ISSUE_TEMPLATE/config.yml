@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/MagiqueDeveloper/boxbox-tweak/tree/master/docs
+    about: Architecture, build guide and recon notes — worth a look before filing.
+  - name: Build or install problem
+    url: https://github.com/MagiqueDeveloper/boxbox-tweak/blob/master/docs/BUILDING.md#troubleshooting
+    about: The troubleshooting table covers most launch, signing and logging failures.
+  - name: Security report
+    url: https://github.com/MagiqueDeveloper/boxbox-tweak/security/advisories/new
+    about: Report a crash, hang or unintended hook privately.

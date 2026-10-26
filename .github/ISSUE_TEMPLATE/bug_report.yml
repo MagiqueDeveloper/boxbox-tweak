@@ -1,0 +1,100 @@
+name: Bug report
+description: Something crashes, does not load, or does not do what it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before filing: run `make doctor APP=<your input>` and `make check`. A
+        surprising number of reports are a stale build, an already-injected
+        input, or an encrypted IPA.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: BoxBox log lines
+      description: |
+        The `[BoxBox]` lines from `make logs` (device) or `make sim-logs`
+        (simulator), around the problem. If there is no
+        `[BoxBox] loaded into …` line at all, say so — that is itself the
+        finding.
+      render: text
+    validations:
+      required: true
+
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did it happen
+      options:
+        - Simulator (make sim)
+        - Device, TrollStore
+        - Device, sideloaded (Sideloadly / AltStore / other)
+        - Device, jailbroken
+    validations:
+      required: true
+
+  - type: input
+    id: dylib-version
+    attributes:
+      label: Dylib version
+      description: Output of `make version`.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: host-version
+    attributes:
+      label: Host app version
+      description: Output of `make doctor APP=<your input>` (the `version:` line).
+      placeholder: "5.5.5 (5500)"
+    validations:
+      required: true
+
+  - type: input
+    id: ios-version
+    attributes:
+      label: iOS / Simulator runtime version
+      placeholder: "18.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: doctor
+    attributes:
+      label: make doctor output
+      render: text
+    validations:
+      required: false
+
+  - type: textarea
+    id: crash
+    attributes:
+      label: Crash report
+      description: |
+        If the app died, paste the `faultingThread` section of the newest
+        `~/Library/Logs/DiagnosticReports/*.ips`, not just the app's own log.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: The input app is decrypted (`make doctor` reports `cryptid 0` on every Mach-O).
+          required: true
+        - label: The input app did not already carry a tweak dylib.
+          required: true
+        - label: I am not attaching or linking a decrypted IPA.
+          required: true

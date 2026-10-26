@@ -1,0 +1,48 @@
+name: Feature request
+description: Propose a new hook, a new tunable, or a change to an existing one.
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This project stays small on purpose: a feature is one module with one
+        install function and a documented reason to exist. Requests that say
+        *where* in the app the change belongs land much better than requests that
+        only say what the end result should look like.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is missing
+      description: The behaviour you want, and why the existing tunables do not cover it.
+    validations:
+      required: true
+
+  - type: textarea
+    id: hook-point
+    attributes:
+      label: Where it could hook
+      description: |
+        If you have done any recon, say which class and selector (or which
+        defaults key) the change would target. `docs/RECON.md` explains how to
+        find one.
+    validations:
+      required: false
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including "do nothing, because a defaults tunable already covers this".
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: This can be done with a hook at load time — no network code, no background work, no persistent daemon.
+          required: true
+        - label: I have not attached a decrypted IPA or any app code.
+          required: true

@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+# A push to master and its PR both run CI; cancel the older one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      # Pinned so a clang-format bump upstream cannot reformat the tree out from
+      # under a green build. Keep in step with the LLVM major used locally.
+      - name: Install clang-format
+        run: pipx install clang-format==21.1.0
+
+      - name: Lint
+        run: ./scripts/lint.sh
+
+  build:
+    name: Build dylib
+    runs-on: macos-14
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Build
+        run: make build
+
+      - name: Verify the product
+        run: |
+          set -euo pipefail
+          dylib=build/BoxBox.dylib
+          test -f "$dylib"
+
+          # The injected LC_LOAD_DYLIB must match what inject.sh writes, or every
+          # injected app fails to launch.
+          otool -D "$dylib" | tail -1 | grep -qx '@executable_path/Frameworks/BoxBox.dylib'
+
+          lipo -info "$dylib" | grep -q arm64
+          codesign --verify --verbose=1 "$dylib"
+
+          otool -L "$dylib" | tail -n +2
+
+      - name: Upload the dylib
+        uses: actions/upload-artifact@v4
+        with:
+          name: BoxBox.dylib
+          path: build/BoxBox.dylib
+          if-no-files-found: error
+          retention-days: 14
