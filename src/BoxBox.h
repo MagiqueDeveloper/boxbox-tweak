@@ -1,22 +1,27 @@
+//
+//  BoxBox.h
+//  BoxBox
+//
+//  Umbrella header for the tweak. Import this from a new hook file; each module
+//  also declares its own header if you only need one piece.
+//
+//  Layout:
+//
+//      BBVersion.h          version constant (single source of truth)
+//      BBLog.h              BBLog / BBLogOnce
+//      BBRuntime.h          swizzling, hooking, recon helpers
+//      BBPreferences.h      typed reads of this tweak's own tunables
+//      BBPremium.h          paid-tier unlock + shared-suite seeding
+//      BBTabTransitions.h   animated tab switches
+//      BBPaywall.h          launch-funnel subscription cover suppression
+//
+
 #import <Foundation/Foundation.h>
-#import <objc/runtime.h>
 
-NS_ASSUME_NONNULL_BEGIN
-
-/// Prefix used for every log line the dylib emits.
-extern NSString *const BBLogTag;
-
-/// Logs to os_log/NSLog with the BoxBox tag already applied.
-void BBLog(NSString *format, ...) NS_FORMAT_FUNCTION(1, 2);
-
-/// Exchanges two instance methods on `cls`, tolerating inherited implementations.
-/// Safe to call from a constructor.
-void BBSwizzle(Class cls, SEL original, SEL replacement);
-
-/// Same, but for class methods (metaclass).
-void BBSwizzleClass(Class cls, SEL original, SEL replacement);
-
-/// Logs `-[Class selector]` pairs for every method on `cls` (handy for recon).
-void BBDumpMethods(Class cls);
-
-NS_ASSUME_NONNULL_END
+#import "BBLog.h"
+#import "BBPaywall.h"
+#import "BBPreferences.h"
+#import "BBPremium.h"
+#import "BBRuntime.h"
+#import "BBTabTransitions.h"
+#import "BBVersion.h"
