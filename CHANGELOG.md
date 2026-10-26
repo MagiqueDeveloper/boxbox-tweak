@@ -43,6 +43,15 @@ The version lives in `src/BBVersion.h` and nowhere else.
 - `SECURITY.md`, `CODE_OF_CONDUCT.md`, and GitHub issue / PR templates.
 - A `ci.yml` workflow running `make lint` and `make build`.
 
+### Fixed
+
+- CI ran the build on `macos-14`, whose Xcode 15 cannot read the project xcodegen
+  generates (objectVersion 77 is the Xcode 16 format) — it failed with a bare
+  `Unable to read project`. Both workflows now use `macos-15` and print the
+  retained `xcodebuild` log when the build fails, so the next such failure is
+  diagnosable from the run itself.
+- The documented host requirement was Xcode 14+; the real floor is Xcode 16.
+
 ### Removed
 
 - The empty `include/` directory and its `project.yml` source entry. The dylib

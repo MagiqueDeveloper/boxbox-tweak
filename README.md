@@ -17,7 +17,7 @@ sideloading route that accepts an ad-hoc signed bundle.
 
 | | |
 | --- | --- |
-| Host | macOS with Xcode 14+ selected (`xcode-select -p`) |
+| Host | macOS with Xcode 16+ selected (`xcode-select -p`) |
 | Target | iOS 15.0+, arm64 |
 | Homebrew | `xcodegen`, `insert-dylib` |
 | Optional | `ideviceinstaller` / `ios-deploy` (install), `libimobiledevice` (logs), `shellcheck` (lint) |

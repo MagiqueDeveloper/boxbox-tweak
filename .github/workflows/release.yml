@@ -11,11 +11,13 @@ permissions:
 jobs:
   release:
     name: Build and publish
-    runs-on: macos-14
+    # Same reasoning as ci.yml: xcodegen writes objectVersion 77, so the runner
+    # needs Xcode 16 or newer.
+    runs-on: macos-15
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install xcodegen
         run: brew install xcodegen
@@ -28,6 +30,16 @@ jobs:
 
       - name: Build
         run: make build
+
+      - name: Build log
+        if: failure()
+        run: |
+          set -euo pipefail
+          if [[ -f build/xcodebuild.log ]]; then
+            tail -120 build/xcodebuild.log
+          else
+            echo "no xcodebuild log was written"
+          fi
 
       - name: Verify and checksum
         run: |

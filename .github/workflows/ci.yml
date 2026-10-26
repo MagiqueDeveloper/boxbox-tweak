@@ -21,7 +21,7 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install shellcheck
         run: |
@@ -38,17 +38,33 @@ jobs:
 
   build:
     name: Build dylib
-    runs-on: macos-14
+    # Must be an image whose Xcode is 16 or newer: xcodegen 2.44+ writes project
+    # objectVersion 77, which is the Xcode 16 format, and Xcode 15 reports only
+    # "Unable to read project" for it.
+    runs-on: macos-15
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install xcodegen
         run: brew install xcodegen
 
       - name: Build
         run: make build
+
+      # build.sh keeps the full xcodebuild log, but only its summary is printed.
+      # On a red run, show the rest — a bare "Unable to read project" is not
+      # enough to act on.
+      - name: Build log
+        if: failure()
+        run: |
+          set -euo pipefail
+          if [[ -f build/xcodebuild.log ]]; then
+            tail -120 build/xcodebuild.log
+          else
+            echo "no xcodebuild log was written"
+          fi
 
       - name: Verify the product
         run: |

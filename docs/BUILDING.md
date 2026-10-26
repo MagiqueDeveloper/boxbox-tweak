@@ -15,6 +15,11 @@ generated, never committed, and `scripts/build.sh` regenerates it on **every**
 build — that is what keeps a newly added source file from being silently left out
 of the target.
 
+**Xcode 16 or newer is required.** xcodegen 2.44 and later write project
+`objectVersion 77`, which is the Xcode 16 project format; Xcode 15 cannot read it
+and `xcodebuild` fails with only `Unable to read project`. Installing an older
+`xcodegen` would also work, but the format is not worth pinning to.
+
 Optional, needed only by some paths:
 
 | Tool | Used by |
